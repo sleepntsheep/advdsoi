@@ -1,0 +1,11 @@
+*.aux
+*.bak*
+*.log
+*.out
+*.toc
+*.blg
+*.synctex.gz
+*.backup
+book_*.tex
+book_.tex
+indent.log
