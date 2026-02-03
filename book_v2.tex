@@ -1,0 +1,672 @@
+% libraries
+\input tikz
+\input pgf
+
+\input opmac
+\input opmac-bib
+
+\usetikzlibrary{calc}
+
+\catcode`\@=11
+\pgfutil@definecolor{gray}{rgb}{0.5,0.5,0.5}
+\pgfutil@definecolor{pink}{rgb}{1.0,0.65,0.75}
+\catcode`\@=12
+
+\def\hisyntax#1{\bgroup\def\ptthook{\csname hisyntax#1\endcsname}} 
+\def\ghisyntax#1{\def\ptthook{\bgroup\csname hisyntax#1\endcsname}} 
+ 
+\def\hisyntaxC#1\egroup{\let\n=\relax \let\NLh=\relax \let\U=\relax 
+   \let\TABchar=\relax % used in OPmac trick 0151 
+   \adef{ }{\n\ \n}\adef\^^M{\n\NLh\n}\edef\tmpb{#1\egroup}% 
+   \replacestrings{\n\egroup}{\egroup}% 
+   \replacestrings{/*}{\tmp}\def\tmp##1*/{\U{commentC}{##1}}\edef\tmpb{\tmpb}% 
+   \replacestrings{//}{\tmp}\def\tmp##1\NLh{\U{commentCpp}{##1}}\edef\tmpb{\tmpb}% 
+   \edef\tmp{\noexpand\replacestrings{\string\"}{\n{\string\"}}}\tmp 
+   \replacestrings{"}{\tmp}\def\tmp##1\tmp{\U{stringC}{##1}}\edef\tmpb{\tmpb}% 
+   \doreplace{##1}{\n{\chCcolor##1}\n}\charsC{}% 
+   \doreplace{\n##1\n}{\kwC{##1}}\keywordsC{}% 
+   \edef\tmp{\noexpand\replacestrings{\NLh\n\string##}{\NLh\noexpand\preprocC}}\tmp 
+   \doreplace{\n##1}{\numberC##1}0123456789{}% 
+   \let\NLh=\par \def\n{}\def\U##1{\csname##1\endcsname}% 
+   \tentt\localcolor\tmpb\egroup} 
+\def\doreplace#1#2{\def\do##1{\ifx^##1^\else \replacestrings{#1}{#2}\expandafter\do\fi}% 
+   \expandafter\do} 
+\def\printttline{\llap{\sevenrm\Black\the\ttline\kern.9em}} % \Black added 
+ 
+\def\commentC#1{{\Green/*#1*/}} 
+\def\commentCpp#1{{\Green//#1}\NLh} 
+\def\stringC#1{{\def\ {\char32 }\Magenta"#1"}} 
+\def\numberC#1\n{{\Cyan#1}} 
+\def\preprocC#1\n{{\Blue\##1}} 
+\edef\keywordsC{{auto}{break}{case}{char}{continue}{default}{do}{double}% 
+   {else}{entry}{enum}{extern}{float}{for}{goto}{if}{int}{long}{register}% 
+   {return}{short}{sizeof}{static}{struct}{switch}{typedef}{union} 
+   {unsigned}{void}{while}} % all keywords of C language are here 
+\def\kwC#1{{\Red#1}} 
+\edef\charsC{()\string{\string}+-*/=[]<>,:;\percent\string&\string^|!?} 
+\let\chCcolor=\Blue 
+
+% file geometry
+\pdfpagewidth=7in
+\pdfpageheight=10in
+
+
+\pdfpagewidth=7in
+\pdfpageheight=10in
+
+\newdimen\marg
+\marg=16mm
+
+% offsets = top/left margin from physical page
+\hoffset=-1in \advance\hoffset by \marg
+\voffset=-1in \advance\voffset by \marg
+
+% text block = page minus left+right, top+bottom
+\hsize=\pdfpagewidth  \advance\hsize by -2\marg
+\vsize=\pdfpageheight \advance\vsize by -2\marg
+
+\headline={}
+\footline={\hss\folio\hss}
+
+
+
+% types
+\iffalse
+\font\rm=lmr10
+\font\bf=lmbx10
+\font\it=lmri10
+\font\sl=lmti10
+\font\tt=lmtt10
+\font\ss=lmss10
+\def\sffamily{\rm}
+\fi
+
+\font\rm=cmr10 \font\bf=cmbx10 \font\it=cmti10 \font\tt=cmtt10 \font\ss=cmss10
+\rm
+
+
+% defs
+
+\newcount\thmno \thmno=0
+
+\newcount\stmtno \stmtno=0
+
+% Common engine: prints "Label n. " then body
+\def\statement#1#2{%
+  \global\advance\stmtno by 1
+  \par\medskip\noindent{\bf #1 \the\stmtno. }#2\par\medskip
+}
+
+
+\def\definition#1{\statement{Definition}{#1}}
+\def\lemma#1{\statement{Lemma}{#1}}
+\def\proposition#1{\statement{Proposition}{#1}}
+\def\theorem#1{\statement{Theorem}{#1}}
+\def\exercise#1{\statement{Exercise}{#1}}
+\def\example#1{\statement{Example}{#1}}
+
+
+\def\qed{\hfill$\square$}
+\def\proof#1{%
+  \par\medskip\noindent{\it Proof. }#1\qed\par\medskip
+}
+
+
+\rm
+
+
+
+% --------------- contents ----------------------
+
+{\font\FN=cmbx24 \FN
+\tit \FN Advanced Data Structures for Olympiad Programmers
+}
+
+\eject
+
+\maketoc
+\vfill
+
+\eject
+
+
+\sec Introduction
+
+\secc Notation
+
+First, I shall lay out the terms which are used later onto this document.  On a cartesian plane, point O means the origin, the main horizontal axis is the line y = 0 or the OX axis, and the main vertical axis is the line x = 0 or the OY axis.  Given a point $P = (a, b)$ on the plane, we say that the quantity $b$ is the {\it ordinate} of point $P$.
+
+On a cartesian space, there are axes $OX, OY, OZ$.  The plane containing $OX$ and $OY$ is the $OXY$ plane.  The $OXZ$ and $OYZ$ planes are defined analogously.  A point $P = (a, b, c)$ on the space has {\it abscissa} $a$, {\it ordinate} $b$, {\it applicate} $c$.  But on a four-dimensional space, there is no such standard name for the fourth coordinate, hence we call it that, the {\it fourth coordinate}.
+
+When a set of $N$ objects with a total order (e.g., the integer set ${4, 29, 482, -4892, 99999}$) is given, we can provide a function from each member of the set into unique identification integer ranging from $1$ to $N$.  This process we call {\it discretization} or {\it coordinate compression}.
+
+All logarithms are in base two, unless stated otherwise.
+
+\secc Graph Theory
+
+
+A graph $G = (V, E)$ consists of a set of vertices $V$ and a set of edges $E$.
+A graph is also called an undirected simple graph.  We typically denote the {\it order} (number of vertices) by $|V| = N$ and the {\it size} (number of edges) by $|E| = M$.
+
+Two vertices are {\it adjacent} in a graph iff there exists an edge connecting them. A vertex and an edge are {\it incident} is the vertex is an endpoint of that edge.
+A {\it walk} is a list of vertices where each consecutive vertices are adjacent.
+A {\it trail} is a walk where no edge is repeated.  A {\it path} is a trail where no vertex is repeated.  A {\it cycle} is a walk where no vertex is repeated except that the first equals the last.
+
+A {\it tree} is a graph satisfying any of the following statements: {\tt (i)} is a minimally connected graph.  {\tt (ii)} its size is one less than its order. {\tt (iii)} is a maximally acyclic graph.
+There three statements are equivalent.  Removing any edge cuts it into two.  Adding any edge makes a cycle.  Given any two different vertices $u, v$ in a tree, there is only one path between the vertices; we call this the $u-v$ path.
+
+A rooted tree is a tree where one vertex, $r$, is chosen as root.
+In a rooted tree, $u$ is an ancestor of $v$ iff the $r-v$ path contains $u$.  When $u$ is an ancestor of $v$, the $v$ is a descendant of the $u$; note that $u$ and $v$ may be the same.  The depth of vertex $u$, $depth(u)$ is the number of edges in $r-u$ path.  Vertex $p$ is a parent of $u$ iff they are adjacent and $p$ is one ancestor of $u$.  The {\it subtree} of u is the subgraph of the original tree, where only descendants of $u$ exists.  The {\it lowest common ancestor} of $u$ and $v$, {\tt LCA(u, v)} is the shared ancestor of both vertex with maximum depth.
+
+
+
+On a rooted tree, we may perform {\it tree flattening}.  The process is running a depth-first-search starting at root $r$, generating the {\it discovery time} and {\it exit time} of each vertex (integer timestamps); the former is denoted {\tt dfn[u]} and is one plus the number of vertices visited before it.  The latter is denoted {\tt tout[u]} and is the discovery time added by one less than the order of subtree of $u$.  The discovery time of all vertices together, is a permutation of $1 \dots N$.  Its inverse permutation, we call {\tt nfd[]}; it satisfies {\tt nfd[dfn[u]] = u}.  If one take any vertex $u$ and consider the set generated by $\left\{ nfd[x] : x \in [dfn[u], tout[u]) \right\}$, that set is precisely the vertices in the subtree of $u$.
+
+
+ \sec Fenwick Trees
+
+
+  A {\it \ii{Fenwick Tree} }, also called {\it \ii{Binary Indexed Tree} (BIT)}, is a data structure providing efficient method for maintaining an fixed-sized list supporting {\it point-add} and {\it prefix-sum} queries.  Both operations run in ${O}(\log N)$ time, where $N$ is the size of the array.  It consumes ${O}(N)$ memory.
+
+\iffalse
+\secc Intuition
+
+  Consider a standard array of integers $A[1..N]$.  A naive {\tt prefix-sum(k)} query takes ${ O}(k)$ time y summing elements one by one.  To improve, we can precompute the prefix sums into another array: $P_i = \sum_1^i A_i$.  This gives ${ O}(1)$ queries but an update requires ${ O}(N)$.  The Fenwick Tree balances them.
+\fi
+
+\secc lowbit
+
+  
+The key operation is {\tt lowbit(i)}, which returns the value of the least significant set bit of $i$.  For example, ${\tt lowbit(12)} = {\tt lowbit(1100_2)} = 100_2 = 4$.
+
+To implement {\tt \ii lowbit } in constant operation, we should first understand \ii{Twos Complement} .  In most if not all computers to-day, negative integers are internally stored with Two's complements.  Let us consider a hypothetical four-bit signed integer types.  5 would be represented as $0101$.  What would -5 be?
+
+Since the integer type holds four bits, any overflow is truncated.  That is, if we add $0101$ to $1011$, resulting in $10000$, that high bit cannot be stored, and hence the result is $0000$.  And that is the principle of Two's Complement; any number added to its negative must be zero.  Then, one can see that the binary representation of $-x$ is obtained by flipping all the bits in $x$ then adding one to it.  Now, the {\tt lowbit} operation is obtained by: $lowbit(x) = x \& -x$.
+
+\secc Structure
+
+A Fenwick Tree is an array {\tt T[]}.  It completely contains all the information of the array {\tt A[]}, and storing the actual {\tt A} is redundant.  We maintain:
+$$
+T_i = \sum_{j=i-lowbit(i)+1}^i A_j
+$$
+
+This makes a hierarchical decomposition.  Each index $i$ is responsible for a range of size $lowbit(i)$.
+
+
+\bigskip
+\bigskip
+\noindent
+\hbox to \hsize{%
+  \vtop{%
+    \hsize=.49\hsize
+    \hbox to \hsize{\hfil%
+\tikzpicture%
+      [font=\rm,scale=0.8,line cap=round,line join=round]
+        \def\n{16}
+        \foreach \i in {1,...,\n} {
+          \draw[thick] (1,\i-1) rectangle (2,\i);
+          \node[thick, anchor=east] at (0.75,\i-0.5) {\i};
+        }
+        \foreach \i/\yB/\yT/\xL/\xR/\yd in {
+          1/0/1/2.40/3.40/0.5,
+          2/0/2/3.90/4.90/1.5,
+          3/2/3/2.40/3.40/2.5,
+          4/0/4/5.40/6.40/3.5,
+          5/4/5/2.40/3.40/4.5,
+          6/4/6/3.90/4.90/5.5,
+          7/6/7/2.40/3.40/6.5,
+          8/0/8/6.90/7.90/7.5,
+          9/8/9/2.40/3.40/8.5,
+          10/8/10/3.90/4.90/9.5,
+          11/10/11/2.40/3.40/10.5,
+          12/8/12/5.40/6.40/11.5,
+          13/12/13/2.40/3.40/12.5,
+          14/12/14/3.90/4.90/13.5,
+          15/14/15/2.40/3.40/14.5,
+          16/0/16/8.40/9.40/15.5
+        }{
+          \fill[gray] (\xL,\yB) rectangle (\xR,\yT);
+          \fill[pink] (\xL,\yT-1) rectangle (\xR,\yT);
+          \draw[dotted, thin] (2,\yd) -- (\xL,\yd);
+        }
+      \endtikzpicture
+    \hfil}%
+    \vskip 4pt
+    \hbox to \hsize{\hfil\it (a) T[] and A[] relationship\hfil}%
+  }%
+  \hfil
+  \vtop{%
+    \hsize=.49\hsize
+    \hbox to \hsize{\hfil
+      \tikzpicture%
+      [node/.style={circle,draw,minimum size=6.5mm,inner sep=0pt}]
+        \node[node] (n0)  at ( 0.0, 0.0)  {0};
+        \node[node] (n1)  at (-1.5, 0.7)  {1};
+        \node[node] (n2)  at (-1.5, 1.4)  {2};
+        \node[node] (n3)  at (-3.0, 2.1)  {3};
+        \node[node] (n4)  at (-1.5, 2.8)  {4};
+        \node[node] (n5)  at (-3.0, 3.5)  {5};
+        \node[node] (n6)  at (-3.0, 4.2)  {6};
+        \node[node] (n7)  at (-4.5, 4.9)  {7};
+        \node[node] (n8)  at (-1.5, 5.6)  {8};
+        \node[node] (n9)  at (-3.0, 6.3)  {9};
+        \node[node] (n10) at (-3.0, 7.0)  {10};
+        \node[node] (n11) at (-4.5, 7.7)  {11};
+        \node[node] (n12) at (-3.0, 8.4)  {12};
+        \node[node] (n13) at (-4.5, 9.1)  {13};
+        \node[node] (n14) at (-4.5, 9.8)  {14};
+        \node[node] (n15) at (-6.0,10.5)  {15};
+        \node[node] (n16) at (-1.5,11.2)  {16};
+        \draw[thin] (n1)  -- (n0);
+        \draw[thin] (n2)  -- (n0);
+        \draw[thin] (n3)  -- (n2);
+        \draw[thin] (n4)  -- (n0);
+        \draw[thin] (n5)  -- (n4);
+        \draw[thin] (n6)  -- (n4);
+        \draw[thin] (n7)  -- (n6);
+        \draw[thin] (n8)  -- (n0);
+        \draw[thin] (n9)  -- (n8);
+        \draw[thin] (n10) -- (n8);
+        \draw[thin] (n11) -- (n10);
+        \draw[thin] (n12) -- (n8);
+        \draw[thin] (n13) -- (n12);
+        \draw[thin] (n14) -- (n12);
+        \draw[thin] (n15) -- (n14);
+        \draw[thin] (n16) -- (n0);
+      \endtikzpicture
+    \hfil}%
+    \vskip 4pt
+    \hbox to \hsize{\hfil\it (b) Query path tree (stop at 0)\hfil}%
+  }%
+      \label [fig:fenwick]
+}
+
+\vskip 6pt
+\centerline{\it Figure: Fenwick tree for $n=16$.}
+\bigskip
+
+\secc Point Update
+
+To add value $v$ to position $A[p]$:
+
+\hisyntax{C}
+\begtt
+void update(int p, int v) {
+     for (; p <= n; p += lowbit(p))
+         T[p] += v;
+}
+\endtt
+
+The function adds $v$ to $T[j]$ for each $j$ whose responsible range contains $p$.
+
+\lemma{The \tt update \rm procedure modifies $O(\log N)$ indices.}
+\proof{Each iteration flips the least significant set bit.  The number of set bits in $N$ cannot exceed $\left[\log_2 N\right]$.}
+
+\secc Prefix Sum Query
+
+To compute $query(k) = \sum_{i=1}^k A[i]$:
+\hisyntax{C}
+\begtt
+int query(int p) {
+    int res = 0;
+    for (; p > 0; p -= p & -p)
+        res += T[p];
+    return res;
+}
+\endtt
+
+The algorithm climbs down the `staircase' (see the figure for query path tree), fetching the sum from the indices along the way.  The ranges that belong to those indices are disjoint.  Consider, $query(13) = query(1011_2)$; it visits $T[13], T[12], T[8]$.  The ranges $[13, 13], [9, 12], [1, 8]$ are pairwise disjoint and together makes $[1, 13]$.
+
+\lemma{The \tt query \rm procedure visits $O(\log N)$ indices.}
+\proof{Each iteration flips the least significant set bit.  The number of set bits in $N$ cannot exceed $\left[\log_2 N \right]$.}
+
+\secc Point Query
+
+Of course, one can obtain $\sum_{i=a}^b A[i]$ by $query(b) - query(a - 1)$.  And $A[i] = query(i) - query(i - 1)$, but it is wasteful.  The special case of point query can be optimized as follows.
+
+\hisyntax{C}
+\begtt
+int getpoint(i) {
+    int res = T[i];
+    int z = i - (i & -i);
+    for (i--; i != z; i -= i & -i)
+        res -= T[i];
+    return res;
+}
+\endtt
+The code first take the sum in the range of $(i - lowbit(i), i]$, then subtract the unwanted contributions.
+
+\label [lowerboundfenwick] \secc lowerbound; Binary Lifting on Fenwick 
+
+It is often desirable to find the first index $p$ such that $\sum_{i = 1}^pA_i >= W$.  Of course, performing normal binary search together with querying the tree yields $O\left(N \log ^2N\right)$.  There exists a $O\left(N \log N\right)$ solution:
+
+\hisyntax{C}
+\begtt
+	int lower_bound_fw(int W) {
+		for (int k = 1 << __lg(N); k; k >>= 1)
+			if (p + k <= N && T[p + k] < W) W -= T[p += k];
+		return p + 1;
+	}
+\endtt
+
+
+\example{Inversion Count}
+Given an array $A[1..N]$, count the number of pairs $(i, j)$ such that $i < j$ and $A[i] > A[j]$.
+
+\bf Solution \rm
+
+First, discretize the array so that elements are in range $1 \dots N$.
+Process elements from right to left. For each position $i$, query the BIT for the number of elements smaller than $A[i]$ seen so far. Then, add $A[i]$ to the BIT.
+
+\hisyntax{C}
+\begtt
+long long count_inversions(int A[], int N) {
+    Discretize(A, N);
+    memset(T, 0, sizeof T);
+    long long ans = 0;
+    for (int i = N; i >= 1; i--) {
+        ans += query(A[i] - 1);
+        update(A[i], 1);
+    }
+    return ans;
+}
+\endtt
+
+Time complexity: ${O}(N \log N)$.
+
+\secc Subarray Queries
+
+We know that a max Fenwick tree works for $changemax(p, v)$ and $prefixmax(i)$ operations.  It may surprise you, Fenwick trees also support general subarray queries, not just prefixes, while retaining the fast $O(N \log N)$ time.  However, this function is trivial with \it segment trees \rm, which we discuss next.  And the level of details of this Fenwick subarray trick is too high.  If you are interested, see \cite[dima2015fenwick].
+
+\sec Segment Tree
+
+The {\it \ii{Segment Tree} } is the usefullest data structure that you shall master.  It handles point modification and range query for any associative operations, not requiring inversibility.
+
+\secc{Structure}
+
+See the figure below, where $A[]$ is the array of data we wish to manipulate, and $T[]$ is the array used for the segment tree; the number in each box is the corresponding index.
+
+The root of segment tree--that is node 1--covers the entirety of $A[]$.  A non-leaf node of the segment tree has leftchild and rightchild, being equal in size.  In each node is stored the aggregate (in the information type we wish to know) of its range.
+
+\bigskip
+\noindent
+
+\centerline{
+\tikzpicture
+        \filldraw[fill=pink,draw] (0.05, 0.05) rectangle (7.95, .95)
+                        node[midway] {1};
+        \filldraw[fill=pink,draw] (0.05, 1.05) rectangle (3.95, 1.95)
+                                   node[midway] {2};
+        \filldraw[fill=pink,draw] (4.05, 1.05) rectangle (7.95, 1.95)
+                                  node[midway] {3};
+        \filldraw[fill=pink,draw] (0.05, 2.05) rectangle (1.95, 2.95)
+                                  node[midway]{4};
+        \filldraw[fill=pink,draw] (2.05, 2.05) rectangle (3.95, 2.95)
+                                  node[midway]{5};
+        \filldraw[fill=pink,draw] (4.05, 2.05) rectangle (5.95, 2.95)
+                                  node[midway]{6};
+        \filldraw[fill=pink,draw] (6.05, 2.05) rectangle (7.95, 2.95)
+                                  node[midway]{7};
+        \foreach \x/\y in {0.05/8,1.05/9,2.05/10,3.05/11,4.05/12,5.05/13,6.05/14,7.05/15}
+        {
+                 \filldraw[fill=pink,draw] (\x, 3.05) rectangle (\x + 0.9, 3.95)
+                             node[midway] {\y};
+           \draw (\x,-0.05-.5) rectangle (\x + .9, -.95-.5)
+                           node[midway] {\pgfmathparse{\y-8}\pgfmathprintnumber{\pgfmathresult}};
+         }
+        \node at (-1,-0.55-.45) {A[]};
+        \node at (-1, 2) {T[]};
+\endtikzpicture
+}
+
+\caption/f [Segment tree for N = 8]
+\label [fig:segment0]
+\bigskip
+
+On the standard numbering for segment tree (as shown), the label for $leftchild(u)$ is $2u$ and, for $rightchild(u)$, $2u + 1$.
+It can be proven that in such tree, the maximum index used will not exceed $4N$.  The proof is omitted.
+
+\hisyntax{C}
+\begtt
+#define leftchild(u) (2*(u))
+#define rightchild(u) (2*(u) + 1)
+\endtt
+
+To be concrete, let us consider a max segment tree, which will support operations as follow: \it (i) \rm assign $A[p] = v$. \it (ii) \rm fetch $max_{i=l}^rA[i]$.
+
+First, since $assign$ operation is required, we need not create a build operation--we can just perform $assign(i, A[i])$ for all $i$.
+
+\secc Assign
+
+Remember the invarient of this segment tree; for the segment tree node $u$ whose responsible range is $A[l_u] \dots A[r_u]$, the value $T[u]$ must equal $max_{i={l_u}}^{r_u} A[i]$.
+
+Thus, to perform $assign(p, v)$, we must first update the leaf node which is responsible for $p$ (let that node be $l$).  That is, set $T[l] = v$.  Then, notice that after doing so the invarient is broken for the ancestor nodes of $l$ (all the other nodes covering $p$), because they have not received the new information.  To fix this, we climb up the ancestors---if $p$ is $4$ then $l$ is $8$, we traverse $12-6-3-1$--- and for each ancestor $a$ update $T[a]$ to be $max(T[leftchild(a)], T[rightchild(a)])$.  This works because if the values in the children node are correct, the aggregate of those values is the correct value for the parent.
+
+
+First, it is most important to clarify the parameter naming.  {\tt segnode} is the integer label that is index to the array {\tt T[]}.  {\tt tl} and {\tt tr} together make a closed interval $[tl, tr]$ that is the range which $segnode$ is responsible for--we call this tree range.  The last two parameters are information of the update: we wish to assign $A[p] = v$.
+
+
+\hisyntax{C}
+\begtt
+void assign(int segnode, int tl, int tr, int p, int v) {
+     if (tl == tr) {
+         T[segnode] = v;
+         return;
+     }
+     if (p <= (tl + tr) / 2)
+        assign(leftchild(segnode), tl, (tl + tr) / 2, p, v);
+     else
+        assign(rightchild(segnode), (tl + tr) / 2 + 1, p, v);
+     T[segnode] = max(T[leftchild(segnode)], T[rightchild(segnode)];
+}
+\endtt
+
+The procedure visits no more nodes than the height of the segment tree--$O(\log N)$.
+
+The logic of updating a non-leaf node's value by those of its children is the same for most type of segment trees--not just max segment tree.  Hence, we may abstract it as:
+
+\hisyntax{C}
+\begtt
+void pushup(int segnode, int tl, int tr) {
+     T[segnode] = max(T[leftchild(segnode)], T[rightchild(segnode)]);
+}
+\endtt
+Then replace the last line in {\tt assign} with {\tt pushup(segnode)}.  It may seem pointless for {\tt pushup} to know the tree range.  However we see later (in lazy propagation) that it can be crucial.
+
+\secc Query
+
+\lemma{Any subarray $[l, r]$ of $A[]$ is the union of the ranges of $O(\log N)$ nodes in the segment tree $T[]$.}
+
+\hisyntax{C}
+\begtt
+#define LEAST -1e9
+int query(int segnode, int tl, int tr, int l, int r) {
+    if (tr < l || r < tl) return LEAST;
+    /* visit segnode */
+    if (l <= tl && tr <= r) return T[segnode];
+    return max(query(leftchild(segnode), tl, (tl + tr) / 2, l, r),
+           query(rightchild(segnode), (tl + tr) / 2 + 1, l, r));
+}
+\endtt
+
+First, it is most important to clarify the parameter naming.  {\tt segnode} is the integer label that is index to the array {\tt T[]}.  {\tt tl} and {\tt tr} together make a closed interval $[tl, tr]$ that is the range which $segnode$ is responsible for--we call this tree range.  {\tt l} and {\tt r} together make a closed interval $[l, r]$ that is the range we which to fetch data on--we call this query range.
+
+There are three cases; {\it (i)\/} the two ranges don't overlap: in this case it is useless to do further work on that portion of segment tree. {\it (ii)\/} the tree range is wholly coverred by query range: in this case all values which $segnode$ is responsible for shall be considered, and all those values are aggregated in $T[segnode]$, hence we can simply return it. {\it (iii)\/} the two ranges partially overlap: here, we descend down the tree on both children, by doing so we have not lost any information.
+
+Now, we proof the lemma above.
+\proof{The number of visited node is the same order of the number of {\it partial cells\/} visited.  Define a partial cell as one that falls into the third case, that is partially overlapping.  Such cells either cover $l$ or cover $r$.  Thus, it must be an ancestor of $l$ or an ancestor of $r$ (or both).  Since the segment tree has $O(\log N)$ height, that number of ancestors is $O(\log N)$.}
+
+
+\secc Generalization
+
+To move from simple segment trees to more complex ones, it is important to understand what they can and cannot do, and how precisely they work.
+
+Let us consider not a segment tree of \tt int \rm, but of elements in the abstract data type, in set $S$, and call the `merge' operation on two elements from $S$ with $\circ$.  That $\circ$ need be closed, i.e., for $x, y \in S$, $x \circ y \in S$.
+Next, notice that $\circ$ must be associative.  This is because a non-leaf node merge values from its two child; if both of those children are non-leaf and $\circ$ is not associative, the value for that node will be wrong.
+
+Formally, let $S$ be the set of possible values that the segment tree may store and $\circ$ be an associative closed binary relation; it is a function $\circ: S^2 \rightarrow S$ where $(a \circ b) \circ c = a \circ (b \circ c)$ for all $a, b, c \in S$.  Then the structure $(S, \circ)$ is a {\it \ii{semigroup} }, and the range aggregation of $\circ$ can be done on a segment tree.  Note that a semigroup need not have an \ii{identity element}.  If the semigroup has identity element $e \in S$ such that $e \circ x = x \circ e = x$ for all $x \in S$, then that semigroup is said to be a {\it \ii monoid }.
+
+While it is true that segment tree can handle semigroup, the implementation is messy.  Thus, it is preferrable to, when you need to build a semigroup segment tree, to turn that semigroup into a monoid.  That can be done by adding a `sentinel' element $e$.  That is, to turn the semigroup $S_0, \circ_0$ into a monoid $S, \circ$, let $S = S_0 \cup {e}$ where e is an arbitrary object not in $S_0$, and let $\circ = \circ_0 \cup \bigcup_{x \in S} \left\{ \left(\left(x, e\right), x\right), \left(\left(e, x\right), x\right) \right\}$.
+
+Consider this implementation of segment tree for general point-update range-query situations.
+
+\hisyntax{C}
+\begtt
+#define S </*type you want here*/>
+#define MAXN 1000
+#define mid ((tl + tr) / 2)
+
+/* (S, merge) need not be commutative, but must be associative */
+S merge(S l, S r) {   /* implement any kind of associative merge */  }
+
+S e = /* identity element here */
+
+S T[4 * MAXN];
+
+void pushup(int segnode, int tl, int tr) {
+     T[segnode] = merge(T[leftchild(segnode)], T[rightchild(segnode)]);
+}
+
+void update(int segnode, int tl, int tr, int p, S v) {
+     if (tl == tr) {
+        T[segnode] = v;
+        return;
+     }
+     if (p <= mid)
+        update(leftchild(segnode), tl, mid, p, v);
+        update(rightchild(segnode), mid + 1, tr, p, v);
+     }
+     pushup(segnode, tl, tr);
+}
+
+S query(int segnode, int tl, int tr, int l, int r) {
+     if (tr < l || r < tl)   return e;
+     if (l <= tl && tr <= r)   return T[segnode];
+     return merge(query(leftchild(segnode), tl, mid, l, r),
+            query(rightchild(segnode), mid + 1, tr, l, r));
+}
+
+void initsegtree(int n) {
+     for (int i = 1; i < 4 * n; ++i)
+         T[i] = e;
+}
+\endtt
+
+
+\secc Pool-allocated Segment Tree
+
+Of course, the heap-numbering (as presented in the previous chapter) is not the only implementation.  So long as the tree have the balanced structure of a segment tree, you can manage the memory allocation in any manner.
+
+Consider the following pool allocated segment tree (which is equivalent, in design principle, to using pointers and \tt malloc \rm).
+
+\hisyntax{C}
+\begtt
+struct NODE {
+    int lc, rc; /* children */
+    S data;
+} pool[1 << 19];
+int ptr = 0;
+
+int build(int tl, int tr) {
+    int i = ptr++;
+    pool[i].data = e;
+    pool[i].lc = build(tl, mid);         pool[i].rc = build(mid + 1, tr);
+    return i;
+}
+\endtt
+
+This way you can make multiple segment trees, each of different sizes, effortlessly.  The \tt update \rm and \tt query \rm procedures are implemented similarly.
+
+\hisyntax{C}
+\begtt
+void update(int segnode, int tl, int tr, int p, S v) {
+     if (tl == tr)    pool[segnode].data = v;
+     else { if (p <= mid)
+          update(T[segnode].lc, tl, mid, p, v),   update(T[segnode].rc, mid + 1, tr, p, v);
+     pushup(segnode, tl, tr); }
+}
+\endtt
+
+Notice the children's labels are stored explicitly in the struct \tt NODE \rm.  Granted, some memory are wasted this way.  But this implementation allow us to make dynamic sized segment trees.
+
+\secc Sprase Segment Tree
+
+\example{Maintain an array of one billion integers, initially filled with zeros, supporting point add update and range sum query; use $O(N \log 1000000000)$, forced online \fnote{If offline solutions are allowed.  Standard Fenwick tree can solve this.} .}
+\bf Solution.  \rm 
+
+Notice, that if the segment tree has billions of node, and each operation on it touchs merely $O(\log 1000000000) ~ 30$ vertices, then almost all of the nodes will never be touched throughout the whole program; if they are not used, it is a waste to allocate memory for them.
+
+Extending from the previous chapter, notice that when pointer allocation is used, we need not build the whole tree at the start.
+In this task, we allocate only one node at the start, the root node.  This trick is named \ii{sparse segment tree} or \ii{dynamic segment tree}.
+
+\hisyntax{C}
+\begtt
+ii = 1;
+root = ii++; /b   * root is at pool[1] */
+pool[root].lc   =    pool[root].rc = 0;
+\endtt
+
+In \tt query \rm procedure, if \tt segnode \rm is \tt 0 \rm, it means the node was never created.  Hence we can act as if that section of the array is filled with zeros.
+
+\hisyntax{C}
+\begtt
+S query(int segnode, int tl, int tr, int l, int r) {
+     if ( 0 == segnode || tr < l || r < tl)   return 0;
+     ...
+\endtt
+
+This way, a \tt query \rm procedure will \it never \rm make any new node; it need not do so.  But \tt update \rm s might.  And it can be implemented trivially, as follows.
+
+\hisyntax{C}
+\begtt
+int update(int segnode, int tl, int tr, int p int v) {
+     if ( segnode == 0 ) {
+        segnode = ii++;
+        pool[segnode].lc  =  pool[segnode].rc  =  0;
+     }
+     if (p <= mid)
+        pool[segnode].lc = update(pool[segnode].lc, tl, mid, p, v);
+        pool[segnode].rc = update(pool[segnode].rc, mid + 1, tr, p, v);
+     }
+     pushup(segnode, tl, tr);
+     return segnode;
+}
+\endtt
+
+Beware, each call to this function need to assign the return value back to the variable that was passed as the first argument.
+
+\exercise{Implement a replacement for \tt std::set<int> \rm with sprase segment tree. }
+\exercise{SPOJ GSS3: maintain an array of integer $A[1..N]$ supporting these queries; \it (i) \rm assign $A[p] = v$ \it (ii) \rm given $l, r$, find the subarray of the subarray $A[l..r]$ with highest sum of elements.  Forced $O(Q \log N)$. }
+
+\secc Walking on Segment Tree
+
+This is a similar but mightier procedure to subsection~\ref [lowerboundfenwick].  Often you will want to, given a boolean function $check(x)$ and range $[l, r]$, find the lowest index $z \in [l, r]$ such that $check(query(l, z))$ is true---hereafter we call this function $findfirst()$.  Similarly you may want to find the highest or rightmost index $z$---we call this $findlast()$.  Since the two functions are of the same principle, we only discuss $findfirst$ to avoid redundant details.
+
+There is an obvious $O(\log ^2N)$ per query approach by binary searching and calling $query$.  But they can be solved in $O(\log N)$ per query.  First, consider an easier version $findfirstroot()$, which returns the lowest $z \in [1..N]$ where $check(query(1, z))$ is true.  Notice that we cannot provide $[l, r]$ to the function here.  An easy way to implement $findfirstroot$ is to descend down the tree, eventually ending at a leaf.  In the procedure, we keep a global $\phi$ value that is reset to $e$ (identity) at the start; at node $u$ we wish to go down the left child, as it holds lower indices.  So we check if $\phi \circ T[leftchild(u)]$ satisfies $check$.  If it does, then the answer $z$ lies in the left child and we traverse there.  Else, $z$ lies in the right child and we can add $T[leftchild(u)]$ to $\phi$.  It is easy to see that this function recurses in $O(\log N)$ depth.
+
+This $findfirstroot$ implementation is easily extended to solve $findfirst$.  Notice that any subarray can be decomposed into union of $O(\log N)$ disjoint intervals, each corresponding to a node in the segment tree.  In fact, the standard $query$ process does precisely that.  Once we obtain those nodes, let it be $v_1, v_2, ..., v_k$, iterate, adding up $T[v_i]$ along the way to find the first $y$ such that $T[v_1] \circ T[v_2] ... \circ T[v_y]$ satisfies $check$.  If no such $y$ exists, then no $z$ exists.  Else, set $\phi$ to be $T[v_1] \circ T[v_2] ... \circ T[v_{y-1}]$ and perform $findfirstroot$ on $T[v_y]$.
+
+
+
+\secc Pushdown-Free Segment Trees
+
+Point-add range-query is nice.  What if one wants range-add range-query?
+
+Let's try to work out $update(l, r, v)$.
+Notice, that since each subarray corresponds to $O(\log N)$ nodes, each of which is completely covered by the update range $[l, r]$.  Thus, we can, in addition to $T[segnode]$ storing the sum, make $added[segnode]$, storing the `added-tag'.  On $update(l, r, v)$, we perform $added[segnode] := added[segnode] \circ v$.  This is counter-intuitive.  For example, the operation $update(1, 3, 12)$ may not actually `touch' the leaf node responsible for $[2, 2]$.  But regardless, we can know later on that $T[2]$ is not the whole complete sum, because to get to $T[2]$ we have to climb down the tree, through all ancestors of $2$.  And that $12$ which we updated is put on $added[]$ of some ancestor of $2$.
+
+
+\secc Lazy Propagation
+
+\vfill \eject
+
+\sec References
+\usebib/s (simple) book
+
+\vfill
+\eject
+
+\makeindex
+
+\end
+
