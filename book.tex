@@ -674,112 +674,6 @@ The array $tag[]$ of the segment tree is of type $U$.  On an $update(l, r, x)$ o
 The monoid $(U, \diamond, id)$ is defined by $U$ being set of integers, $\diamond$ being the $max$ function, $id$ being negative infinity, and $\phi$ being the identity function that does nothing, for the type of update-data and query-data need not be different--i.e., $\phi(x) = x$.
 
 
-
-\secc Pool-allocated Segment Tree
-
-Of course, the heap-numbering (as presented in the previous chapter) is not the only implementation.  So long as the tree have the balanced structure of a segment tree, you can manage the memory allocation in any manner.
-
-Consider the following pool allocated segment tree (which is equivalent, in principle, to using pointers and \tt malloc \rm).
-
-\hisyntax{C}
-\begtt
-struct NODE {
-    int lc, rc; /* children */
-    S data;
-  } T[1 << 19]; /* the pool */
-int ptr = 0;
-
-int build(int tl, int tr) {
-    int i = ptr++;
-    T[i].data = e;
-    T[i].lc = build(tl, mid);         T[i].rc = build(mid + 1, tr);
-    return i;
-  }
-
-This way you can make multiple segment trees, each of different sizes, effortlessly.  The \tt update \rm and \tt query \rm procedures are implemented similarly.
-
-\hisyntax{C}
-\begtt
-void update(int v, int tl, int tr, int p, S val) {
-    if (tl == tr)    T[v].data = val;
-    else {
-        if (p <= mid) {
-            update(T[v].lc, tl, mid, p, val),
-            update(T[v].rc, mid + 1, tr, p, val);
-          }
-        pushup(v, tl, tr);
-      }
-  }
-\endtt
-
-This way you can make multiple segment trees, each of different sizes, effortlessly.  The \tt update \rm and \tt query \rm procedures are implemented similarly.
-
-\hisyntax{C}
-\begtt
-void update(int v, int tl, int tr, int p, S val) {
-    if (tl == tr)    T[v].data = val;
-    else {
-        if (p <= mid) {
-            update(T[v].lc, tl, mid, p, val),
-            update(T[v].rc, mid + 1, tr, p, val);
-          }
-        pushup(v, tl, tr);
-      }
-  }
-\endtt
-
-Notice the children's indices are stored explicitly in the struct \tt NODE \rm.  Granted, some memory are wasted this way.  But this implementation allow us to make dynamic sized segment trees.
-
-\secc Sparse Segment Tree
-
-\example{Maintain an array of one billion integers, initially filled with zeros, supporting point add update and range sum query; use $O(N \log 1000000000)$, forced online \fnote{If offline solutions are allowed.  Standard Fenwick tree can solve this.} .}
-\bf Solution.  \rm
-
-Had we have a segment tree of billions of nodes, it would be trivial!
-Notice, that if the segment tree has billions of node, and each operation on it touchs merely $O(\log 1000000000) ~ 30$ vertices, then almost all of the nodes will never be touched throughout the whole program; if they are not used, it is a waste to allocate memory for them.  Because we know exactly what an untouched node looks like, and what information it holds (in this case, zero!).
-
-Extending from the previous chapter, notice that when pointer allocation is used, we need not build the whole tree at the start.
-In this task, we allocate only one node at the start, the root node.  This trick is named \iid{sparse segment tree} or \iid{dynamic segment tree}.
-
-\hisyntax{C}
-\begtt
-ii = 1;
-root = ii++; /* root is at T[1] */
-T[root].lc   =    T[root].rc = 0;
-\endtt
-
-In \tt query \rm procedure, if \tt v \rm is \tt 0 \rm, it means the node was never created.  Hence we can act as if that section of the array is filled with zeros.
-
-\hisyntax{C}
-\begtt
-S query(int v, int tl, int tr, int l, int r) {
-if ( 0 == v || tr < l || r < tl)   return 0;
-...\endtt
-
-This way, a \tt query \rm procedure will \it never \rm make any new node; it need not do so.  But \tt update \rm s might.  And it can be implemented trivially, as follows.
-
-\hisyntax{C}
-\begtt
-int update(int v, int tl, int tr, int p, int val) {
-    if ( v == 0 ) {
-        v = ii++;
-        T[v].lc  =  T[v].rc  =  0;
-      }
-    if (p <= mid) {
-        T[v].lc = update(T[v].lc, tl, mid, p, val);
-        T[v].rc = update(T[v].rc, mid + 1, tr, p, val);
-      }
-    pushup(v, tl, tr);
-    return v;
-  }
-\endtt
-
-Beware, each call to this function need to assign the return value back to the variable that was passed as the first argument.
-
-\exercise{Implement a replacement for \tt std::set<int> \rm with sprase segment tree, where each operation takes $O(\log ^2max))$ }
-
-\exercise{SPOJ GSS3: maintain an array of integer $A[1..N]$ supporting these queries; \it (i) \rm assign $A[p] = v$ \it (ii) \rm given $l, r$, find the subarray of the subarray $A[l..r]$ with highest sum of elements.  Forced $O(Q \log N)$. }
-
 \secc Walking on Segment Tree
 
 This is a similar but mightier procedure to subsection~\ref [lowerboundfenwick].  Often you will want to, given a boolean function $check(x)$ and range $[l, r]$, find the lowest index $z \in [l, r]$ such that $check(query(l, z))$ is true---hereafter we call this function $findfirst()$.  Similarly you may want to find the highest or rightmost index $z$---we call this $findlast()$.  Since the two functions are of the same principle, we only discuss $findfirst$ to avoid redundant details.
@@ -962,7 +856,190 @@ What value indicates ``no pending update'' for lazy? For range-add, it's 0. For 
 
 \fi
 
+
+\secc Pool-allocated Segment Tree
+
+Of course, the heap-numbering (as presented in the previous chapter) is not the only implementation.  So long as the tree have the balanced structure of a segment tree, you can manage the memory allocation in any manner.
+
+Consider the following pool allocated segment tree (which is equivalent, in principle, to using pointers and \tt malloc \rm).
+
+\hisyntax{C}
+\begtt
+struct NODE {
+    int lc, rc; /* children */
+    S data;
+  } T[1 << 19]; /* the pool */
+int ptr = 0;
+
+int build(int tl, int tr) {
+    int i = ptr++;
+    T[i].data = e;
+    T[i].lc = build(tl, mid);         T[i].rc = build(mid + 1, tr);
+    return i;
+  }
+
+This way you can make multiple segment trees, each of different sizes, effortlessly.  The \tt update \rm and \tt query \rm procedures are implemented similarly.
+
+\hisyntax{C}
+\begtt
+void update(int v, int tl, int tr, int p, S val) {
+    if (tl == tr)    T[v].data = val;
+    else {
+        if (p <= mid) {
+            update(T[v].lc, tl, mid, p, val),
+            update(T[v].rc, mid + 1, tr, p, val);
+          }
+        pushup(v, tl, tr);
+      }
+  }
+\endtt
+
+This way you can make multiple segment trees, each of different sizes, effortlessly.  The \tt update \rm and \tt query \rm procedures are implemented similarly.
+
+\hisyntax{C}
+\begtt
+void update(int v, int tl, int tr, int p, S val) {
+    if (tl == tr)    T[v].data = val;
+    else {
+        if (p <= mid) {
+            update(T[v].lc, tl, mid, p, val),
+            update(T[v].rc, mid + 1, tr, p, val);
+          }
+        pushup(v, tl, tr);
+      }
+  }
+\endtt
+
+Notice the children's indices are stored explicitly in the struct \tt NODE \rm.  Granted, some memory are wasted this way.  But this implementation allow us to make dynamic sized segment trees.
+
+\secc Sparse Segment Tree
+
+\example{Maintain an array of one billion integers, initially filled with zeros, supporting point add update and range sum query; use $O(N \log 1000000000)$, forced online \fnote{If offline solutions are allowed.  Standard Fenwick tree can solve this.} .}
+\bf Solution.  \rm
+
+Had we have a segment tree of billions of nodes, it would be trivial!
+Notice, that if the segment tree has billions of node, and each operation on it touchs merely $O(\log 1000000000) ~ 30$ vertices, then almost all of the nodes will never be touched throughout the whole program; if they are not used, it is a waste to allocate memory for them.  Because we know exactly what an untouched node looks like, and what information it holds (in this case, zero!).
+
+Extending from the previous chapter, notice that when pointer allocation is used, we need not build the whole tree at the start.
+In this task, we allocate only one node at the start, the root node.  This trick is named \iid{sparse segment tree} or \iid{dynamic segment tree}.
+
+\hisyntax{C}
+\begtt
+ii = 1;
+root = ii++; /* root is at T[1] */
+T[root].lc   =    T[root].rc = 0;
+\endtt
+
+In \tt query \rm procedure, if \tt v \rm is \tt 0 \rm, it means the node was never created.  Hence we can act as if that section of the array is filled with zeros.
+
+\hisyntax{C}
+\begtt
+S query(int v, int tl, int tr, int l, int r) {
+if ( 0 == v || tr < l || r < tl)   return 0;
+...\endtt
+
+This way, a \tt query \rm procedure will \it never \rm make any new node; it need not do so.  But \tt update \rm s might.  And it can be implemented trivially, as follows.
+
+\hisyntax{C}
+\begtt
+int update(int v, int tl, int tr, int p, int val) {
+    if ( v == 0 ) {
+        v = ii++;
+        T[v].lc  =  T[v].rc  =  0;
+      }
+    if (p <= mid) {
+        T[v].lc = update(T[v].lc, tl, mid, p, val);
+        T[v].rc = update(T[v].rc, mid + 1, tr, p, val);
+      }
+    pushup(v, tl, tr);
+    return v;
+  }
+\endtt
+
+Beware, each call to this function need to assign the return value back to the variable that was passed as the first argument.
+
+\exercise{Implement a replacement for \tt std::set<int> \rm with sprase segment tree, where each operation takes $O(\log ^2max))$ }
+
+\exercise{SPOJ GSS3: maintain an array of integer $A[1..N]$ supporting these queries; \it (i) \rm assign $A[p] = v$ \it (ii) \rm given $l, r$, find the subarray of the subarray $A[l..r]$ with highest sum of elements.  Forced $O(Q \log N)$. }
+
+
+\secc \iid{Persistent} Segment Trees (\iid{copy-on-write} )
+
+{\bf Motivation---why would we need so many segment trees?}
+
+\example{Given a tree of order $N \le 100 000$, where on each vertex $v$ is attached an integer $a_v$.
+answer (on-line) $Q \le 100 000$ queries where each one is in form $ask(u, y)$, asking for count of vertices
+on the $1$-$u$ path whose attached integer is less than $y$.}
+
+{\bf Solution.}  First, discretize the values so that every vertex's value is is not exceeding $N$. Then,
+if offline processing is allowed, we could maintain a sum segment tree of size $N$ and perform a depth-first-search;
+when at vertex $u$, add one to position $a_v$ then answer all queries whose first parameter is $u$ by fetching
+$getsum(1, y)$ on the segment tree.  And remove one from the position $a_v$ before leaving the vertex.
+
+But since on-line processing is required, it would be good if we can do the same depth-first-search, but then
+after entering each vertex and adding the occurance, that state or copy of segment tree could be saved.
+But of course, we may not use $O(N^2)$ memory in this problem.
+
+Notice that if we really could make $N$ versions of segment trees as described, it is the case here that
+the one for node $u$ differs from the one for $u$'s parent by merely one update operation (that is, the
+adding one to the occurance $a_u$).  Thus, if we can design a segment tree variant where
+each update gives you a new version and lets you keep the old one before the update, using reasonable
+amount of time and memory, this problem would be solved.
+
+{\bf Structure}
+
+A copy-on-write segment tree is very similar in principles to a sprase segment tree.  It is most important
+to notice that one update only touches a small part of the tree---$O(\log N)$ nodes.  Hence,
+if we wish to change any value belonging to node $u$, we can simply make a new version of that node,
+let this be $u+$.  Do that by---
+
+\begtt
+  sum[u+] = sum[u]; 
+  leftchild[u+] = leftchild[u];
+  rightchild[u+] = rightchild[u];
+\endtt
+
+Thereforth, in any future version of the tree must not concerns itself with $u+$;
+to do that any pointers in the tree which was pointing to $u$ must be updated to
+point to $u+$.  This is easy, for the only pointers to a node in segment tree
+arise from its parent, and the usual path for updating in a segment tree is a
+already a leaf-to-root path.
+
+{\bf Implementation}
+
+\begtt
+ii = 1;
+root = ii++; /* root is at T[1] */
+T[root].lc   =    T[root].rc = 0;
+
+int update(int v, int tl, int tr, int p, int val) {
+    ii++;
+    if ( v == 0 ) {
+        T[v].lc  =  T[v].rc  =  0;
+      }
+    T[ii - 1] = T[v];
+    v = ii - 1;
+    if (p <= mid) {
+        T[v].lc = update(T[v].lc, tl, mid, p, val);
+        T[v].rc = update(T[v].rc, mid + 1, tr, p, val);
+      }
+    T[v] = pushup(v, tl, tr);
+    return v;
+  }
+\endtt
+
+Notice the similarity to the sprase segment tree's implementation.  But here we need
+the function {\tt pushup} to return a new node too, for a function must never modify an
+existing node.
+
+To use this to solve the problem, one can maintain another array $rt[]$ where
+$rt_u$ is the segment tree version for node $u$ and is obtained by
+appropriately updating $rt_{parent[u]}$ (or updating the empty tree, in case
+of the tree's node $1$ which is the root and has not a parent).
+
 \sec Linear Algebra
+
+\secc Vectors.  Vector Spaces.  Matrices.
 
 {\bf Vectors and Linear Combinations}
 Here is presented the computational viewpoint of linear algebra.
@@ -1065,9 +1142,158 @@ Given matrices $A$ and $B$ where the row length of $A$, denoted $m$, coincides w
  TODO
 
 
-{\bf Guassian Elimination}
+\secc System of Linear Equations (SLAE).
 
-TODO
+A system of linear equations with $n$ equations and $m$ unknowns is in form of---
+
+$$
+\eqalign{
+a_{11}x_1  + a_{12}x_2 + a_{13}x_3 + \dots + a_{1m}x_m &= b_1 \cr
+a_{21}x_1  + a_{22}x_2 + a_{23}x_3 + \dots + a_{2m}x_m &= b_2 \cr
+\vdots & \cr
+a_{n1}x_1  + a_{n2}x_2 + a_{n3}x_3 + \dots + a_{nm}x_m &= b_n \cr
+}
+$$.
+
+Where $a_{ij}$ and $b_i$ are constants and $x_i$ are unknowns which we wish to solve for.
+We can gather the coefficients $a_{ij}$ into an $n$ by $m$ matrix, as follows---
+
+$$
+\left[\matrix{
+    a_{11}  \quad a_{12}\quad  a_{13} \quad \dots  & \quad a_{1m} \cr
+    a_{21} \quad   a_{22}\quad a_{23} \quad \dots & \quad a_{2m} \cr
+    \vdots   & \cr
+    a_{n1}  \quad a_{n2} \quad a_{n3} \quad \dots & \quad a_{nm} \cr
+}\right]
+$$.
+
+Then we can write the SLAE as the equation $\bf Ax = b$.
+To solve this, we introduce {\bf Guass-Jordan Elimination}.
+The {\it \iid{augmented matrix} } is obtained by appending $\bf b$ to the coefficient matrix:
+
+
+$$
+\left[
+\matrix{
+a_{11} & a_{12} & \cdots & a_{1n} \cr
+a_{21} & a_{22} & \cdots & a_{2n} \cr
+\vdots & \vdots &        & \vdots \cr
+a_{m1} & a_{m2} & \cdots & a_{mn} \cr
+}
+\;\middle|\;
+\matrix{
+b_1 \cr
+b_2 \cr
+\vdots \cr
+b_m \cr
+}
+\right]
+$$
+
+Once we build the augmented matrix, it is trivial to see that performing any of these
+three operations on it changes not the solution set of unknowns.
+
+\begitems
+* Exchange any two rows of the matrix.
+* Scale any row of the matrix by a nonzero scalar.
+* Replace one row by the sum of itself with a scaled version of another row.
+\enditems
+
+\exercise{Proof that these operations does not affect the solution set.}
+\exercise{Proof that the third operation can be replaced by
+    ``Subtract from one row another row'' and the three operations will remain
+  as competant.}
+
+Using these operations, we aim to turn the our augmented matrix into its
+{\it \iid{reduced row echelon form} }.  A reduced row echelon form satisfies
+the following property.
+
+\begitems
+* Any zero row is below any nonzero row.
+* A nonzero row's leftmost nonzero entry is $1$.
+* The leading $1$ of a nonzero row, is the only nonzero entry in its column.
+\enditems
+
+For example, if ${\bf A} = \left[\matrix{
+    2 \quad 5 \cr
+    3 \quad 7 \cr
+}
+\;\middle|\;
+\matrix{
+  4 \cr
+  1 \cr
+} \right]$ is the reduced row echelon form of $\bf A$ is $rref({\bf A}) = 
+\left[\matrix{
+    1 \quad 2.5 \cr
+    0 \quad   1 \cr
+}
+\;\middle|\;
+\matrix{
+  2 \cr
+  -5 \cr
+}\right]$.  That is obtained by scaling the first row to its half, then subtracting
+from the second by thrice of the scaled first.
+
+\example{Find the reduced row echelon form of matrix ${\bf A} = \left[\matrix{
+      1 & 2 & 3&4 \cr
+      0 & 2 & 4&3 \cr
+      0 & 1 & 2&5 \cr
+ }\right]$.}
+ {\bf Solution.  }{$rref({\bf A}) = \left[\matrix{
+       {\bf 1} & 0 & -1 & -6  \cr
+       0 & {\bf 1} & 2 & 5 \cr
+       0 & 0 &0 & {\bf 1} \cr
+   }\right]$.  The bolded positions are called its {\it \iid{pivots} }.
+ }
+
+The {\it pivots} in a matrix $\bf A$ is the position of leading entries of the nonzero
+rows in $rref({\bf A})$.  Each pivot is the only nonzero entry in its column.
+A column which is not a pivot column is to be a {\it \iid{free column} }.
+
+\exercise{Proof that the SLAE whose augmented matrix is $\bf A$ share exactly the same
+solutions {\bf x} as the SLAE whose augmented matrix is $rref({\bf A})$.}
+
+{\bf Back Substitution}
+To solve a SLAE, find the reduced row echelon form of its augmented matrix; then perform
+back substitution.  That is, solve $x_m$ by the last nonzero row (trivial), use the value
+of $x_m$ to solve for $x_{m-1}$, and so on.
+
+TODO some example
+
+\exercise{Proof that a SLAE has no equation if the reduced row echelon form of its
+augmented matrix has a row which is nonzero only in its rightmost column.}
+
+
+\theorem{The number of pivots in a matrix coincides with its column rank.}
+\proof{It is trivial to see that each pivot column is linearly independent to the others.
+And the free columns can be written as linear combinations of the pivot columns.}
+
+\theorem{The number of free columns in a matrix coincides with its nullity.}
+\proof{TODO}
+
+\theorem{(Rank-Nullity.)  A matrix's rank and nullity sum to its row length.}
+\proof{TODO}
+
+\secc XOR Basis
+
+\example{Given an array $a[1..n]$ of non-negative integers not exceeding $2^b - 1$, find the number of set of indices $j_1,
+  j_2, \dots , j_k$ such that the XOR-sum $a[j_1] \oplus a[j_2] \oplus \dots \oplus a[j_k]$
+  is zero.
+}
+
+{\bf Solution.} This is a system of linear equation; for a set of picked indices, let $x_i = 1$ if $j_1$ is picked and
+$x_i = 0$ otherwise.  Then the problem asks for the number of solutions $\bf x$ to $\bf Ax = 0$, where the matrix $\bf A$
+is obtained by using the binary representation of $a[i]$ as the $i^{th}$ row; that is ${\bf A}_{ij} = (a[i] >> j) \& 1$.
+
+The solutions $\bf x$ satisfying $\bf Ax = 0$ are precisely those in the nullspace $ker({\bf A})$.  Notice that since
+we work in integer modulo two system, the answer we want (which is the size $\left|ker({\bf A})\right|$) is $2^{{\rm dim}\ {\rm ker}({\bf A})}
+= 2^{{\rm nullity}({\bf A})}$.  The nullity can be found by performing guassian elimination and counting the free columns.
+
+\exercise{Given an array $a[1..n]$ of non-negative integers not exceeding $2^b - 1$, find the number of values $z$ such that 
+  there exists a set of indices $j_1,
+  j_2, \dots , j_k$ where the XOR-sum $a[j_1] \oplus a[j_2] \oplus \dots \oplus a[j_k] = z$.
+}
+{\bf Hint.} Invoke the Rank-Nullity theorem.
 
 
 \sec Tree Flattening
